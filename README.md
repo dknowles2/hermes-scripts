@@ -12,6 +12,11 @@ as an off-machine backup in case that host is lost — it is not deployed from h
 - **`ha_issue_collector.py`** — Fetches open `home-assistant/core` issues mentioning
   `dknowles2` or labeled `integration: hydrawise` / `integration: schlage`, and files
   kanban tasks per issue. Runs daily via the "HA Core Issue Monitor" cron job.
+  Also auto-applies the appropriate `integration: <name>` label to an issue if it's
+  missing one — **except** it never applies labels to `home-assistant/core`
+  (guarded via `NEVER_LABEL_REPOS`, since David doesn't maintain that repo). This
+  is currently a no-op in practice since that's the only repo this script touches;
+  the guard exists so it's safe if the script's scope ever expands.
 
 - **`pr_watcher_collector.py`** — Fetches open PRs across `dknowles2/*` repos via
   `gh api search/issues`, classifies each by author (`dependabot`, `third_party`, or

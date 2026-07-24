@@ -4,6 +4,20 @@ import sys
 
 WORKSPACE = "worktree:/home/dknowles/workspace/core"
 ASSIGNEE = "watcher"
+REPO = "home-assistant/core"
+
+# Safety guard: repos we must NEVER apply labels to, even if this script's
+# scope ever expands. home-assistant/core is not a repo David maintains —
+# labeling issues there is not our call to make. Keep this explicit rather
+# than relying on REPO happening to match, so the guard survives refactors.
+NEVER_LABEL_REPOS = {"home-assistant/core"}
+
+# integration -> label name, used when auto-labeling issues that are missing
+# an "integration: ..." label.
+INTEGRATION_LABELS = {
+    "hydrawise": "integration: hydrawise",
+    "schlage": "integration: schlage",
+}
 
 
 def run_gh(command):
@@ -13,6 +27,30 @@ def run_gh(command):
     except subprocess.CalledProcessError as e:
         print(f"Error running: {command}\n{e.stderr}", file=sys.stderr)
         return ""
+
+
+def ensure_label(repo, issue_number, integration, current_labels):
+    """Apply the appropriate integration label if the issue doesn't already
+    have one. Never touches repos in NEVER_LABEL_REPOS."""
+    if repo in NEVER_LABEL_REPOS:
+        return
+
+    label = INTEGRATION_LABELS.get(integration)
+    if not label:
+        return
+
+    has_integration_label = any(
+        l.lower().startswith("integration:") for l in current_labels
+    )
+    if has_integration_label:
+        return
+
+    cmd = f'gh issue edit {issue_number} --repo {repo} --add-label "{label}"'
+    try:
+        subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
+        print(f"Applied label {label!r} to {repo}#{issue_number}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error applying label to {repo}#{issue_number}: {e.stderr}", file=sys.stderr)
 
 
 def create_task(board, issue_number, title, url, body_excerpt=""):
@@ -119,7 +157,21 @@ def main():
             print(f"Skipping #{num} ({title!r}) — integration unknown", file=sys.stderr)
             continue
 
+        # Auto-label the issue with its integration if it's missing one.
+        # NEVER_LABEL_REPOS guards home-assistant/core (not our repo to
+        # label) — this is currently a no-op since REPO == that repo, but
+        # kept generic so it's safe if this script's scope ever expands to
+        # repos David actually maintains.
+        label_raw = run_gh(f"gh issue view {num} --repo {REPO} --json labels")
+        current_labels = []
+        if label_raw:
+            try:
+                current_labels = [l.get("name", "") for l in json.loads(label_raw).get("labels", [])]
+            except Exception as e:
+                print(f"Error parsing labels for #{num}: {e}", file=sys.stderr)
+
         for board in boards:
+            ensure_label(REPO, num, board, current_labels)
             create_task(board, num, title or f"Issue #{num}", url, body_excerpt)
 
 
