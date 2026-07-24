@@ -22,11 +22,26 @@ as an off-machine backup in case that host is lost — it is not deployed from h
   - Third-party PRs → assigns a `reviewer` kanban task to review the diff and always
     hands final say back to David via PR assignment.
 
+## Cron job definitions
+
+`cron-jobs/` holds restorable specs (schedule, toolsets, model, and the full
+prompt text) for each cron job that drives these scripts, since the jobs
+themselves live only in Hermes's internal cron store (`~/.hermes/cron/`) on
+`elzar` and aren't otherwise version-controlled:
+
+- **`cron-jobs/ha_issue_monitor.md`** — HA Core Issue Monitor (daily 9am)
+- **`cron-jobs/pr_watcher.md`** — PR Watcher (daily 10am)
+
+These are not auto-synced — if a job's prompt/schedule/config changes on
+`elzar`, update the corresponding file here manually.
+
 ## Updating
 
-When these scripts change on `elzar`, copy the latest version here and push:
+When these scripts or cron job configs change on `elzar`, copy the latest
+version here and push:
 
 ```bash
 cp ~/.hermes/scripts/*.py /path/to/this/repo/
-git add -A && git commit -m "sync: update collector scripts" && git push
+# manually update cron-jobs/*.md to match any prompt/schedule changes
+git add -A && git commit -m "sync: update collector scripts and cron job specs" && git push
 ```
