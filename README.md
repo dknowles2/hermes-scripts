@@ -54,7 +54,7 @@ themselves live only in Hermes's internal cron store (`~/.hermes/cron/`) on
 
 - **`cron-jobs/ha_issue_monitor.md`** — HA Core Issue Monitor (daily 9am)
 - **`cron-jobs/pr_watcher.md`** — PR Watcher (daily 10am)
-- **`cron-jobs/incoming_scans_sorter.md`** — Incoming Scans Sorter (hourly)
+- **`cron-jobs/incoming_scans_sorter.md`** — Incoming Scans Sorter (daily 8am)
 
 These are not auto-synced — if a job's prompt/schedule/config changes on
 `elzar`, update the corresponding file here manually.

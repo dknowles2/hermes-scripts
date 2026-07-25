@@ -10,7 +10,7 @@ Recreate with:
 ```bash
 hermes cron create \
   --name "Incoming Scans Sorter" \
-  --schedule "every 1h" \
+  --schedule "0 8 * * *" \
   --script incoming_scans_collector.py \
   --enabled-toolsets terminal,file \
   --deliver origin \
@@ -23,8 +23,8 @@ invocation.)
 
 ## Config
 
-- **Schedule:** `every 1h` — polling interval; adjust if David wants faster/
-  slower turnaround on new scans.
+- **Schedule:** `0 8 * * *` (daily, 8am) — polling interval; adjust if David
+  wants faster/slower turnaround on new scans.
 - **Script:** `incoming_scans_collector.py` (this repo) — lists files
   currently sitting in "Incoming Scans" that haven't been processed or
   flagged yet, using local state at `~/.hermes/state/incoming_scans_state.json`.
