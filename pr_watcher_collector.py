@@ -4,6 +4,9 @@ import sys
 
 OWNER = "dknowles2"
 
+# Repos to skip entirely (no kanban tasks filed, no gh calls made).
+IGNORED_REPOS = {"dknowles2/ha-shady"}
+
 
 def run_gh(command):
     try:
@@ -36,6 +39,8 @@ def main():
 
                 repo_url = item.get("repository_url", "")
                 repo = repo_url.split("/repos/")[-1] if "/repos/" in repo_url else ""
+                if repo in IGNORED_REPOS:
+                    continue
                 number = item.get("number")
                 title = item.get("title", "")
                 url = item.get("html_url", "")

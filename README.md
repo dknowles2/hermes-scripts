@@ -20,7 +20,8 @@ as an off-machine backup in case that host is lost — it is not deployed from h
 
 - **`pr_watcher_collector.py`** — Fetches open PRs across `dknowles2/*` repos via
   `gh api search/issues`, classifies each by author (`dependabot`, `third_party`, or
-  `own` — David's own PRs are skipped). Feeds the "PR Watcher" cron job, which:
+  `own` — David's own PRs are skipped). Also skips repos in `IGNORED_REPOS`
+  entirely (currently `dknowles2/ha-shady`). Feeds the "PR Watcher" cron job, which:
   - Dependabot PRs → assigns a `watcher` kanban task to diagnose/fix CI failures
     (e.g. new ruff rule violations) or request a rebase on conflicts, escalating to
     David when unsure.
