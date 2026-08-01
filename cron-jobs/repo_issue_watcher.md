@@ -9,6 +9,7 @@ hermes cron create \
   --script repo_issue_collector.py \
   --enabled-toolsets terminal,web,kanban \
   --deliver origin \
+  --attach-to-session \
   --prompt-file repo_issue_watcher.prompt.md
 ```
 
@@ -19,6 +20,7 @@ hermes cron create \
 - **Mode:** LLM-driven (`no_agent: false`)
 - **Toolsets:** `terminal`, `web`, `kanban`
 - **Deliver:** `origin` (Telegram DM)
+- **Attach to Session:** `true` (enables conversational threads on Telegram so David can reply directly to questions/deliveries)
 
 ## Prompt
 
@@ -44,8 +46,9 @@ For each open issue in the JSON:
 4. **Reconcile closed issues:** for each board (schlage, hydrawise), list cards via `hermes kanban --board <slug> list --json`, and for any card whose idempotency key starts with `repo-watcher-` and whose corresponding issue number is no longer present in the current open-issues JSON (i.e. it was closed), mark it `hermes kanban complete <task_id>` then `hermes kanban archive <task_id>`.
 
 5. **Report to David via Telegram**:
-   - Deliver a summary ONLY IF there were changes (new issues found, labels applied, assignees set, or cards closed/archived): include the title, a 1-2 sentence problem summary, and the full clickable GitHub URL (e.g. `https://github.com/dknowles2/pyschlage/issues/313`). NEVER use bare numbers like "#313".
-   - CRITICAL SILENCE RULE: If nothing changed and no actions/updates occurred since the previous run, do NOT send any Telegram message — remain completely silent.
+   - Deliver a summary ONLY IF there were changes or questions needing David's input (new issues found, labels applied, assignees set, or cards closed/archived): include the title, a 1-2 sentence problem summary, and the full clickable GitHub URL (e.g. `https://github.com/dknowles2/pyschlage/issues/313`). NEVER use bare numbers like "#313".
+   - If a question or decision is needed from David, format it clearly as `❓ Question for David: [<Repo> #<Number>]` with the exact question, so David can reply directly in Telegram.
+   - CRITICAL SILENCE RULE: If nothing changed and no actions/updates/questions occurred since the previous run, do NOT send any Telegram message — remain completely silent.
 
 Repos: https://github.com/dknowles2/pyschlage and https://github.com/dknowles2/pydrawise
 ```

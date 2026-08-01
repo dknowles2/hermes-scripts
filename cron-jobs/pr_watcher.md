@@ -9,6 +9,7 @@ hermes cron create \
   --script pr_watcher_collector.py \
   --enabled-toolsets terminal,web,kanban \
   --deliver origin \
+  --attach-to-session \
   --prompt-file pr_watcher.prompt.md
 ```
 
@@ -19,6 +20,7 @@ hermes cron create \
 - **Mode:** LLM-driven (`no_agent: false`)
 - **Toolsets:** `terminal`, `web`, `kanban`
 - **Deliver:** `origin` (Telegram DM)
+- **Attach to Session:** `true` (enables conversational threads on Telegram so David can reply directly to questions/deliveries)
 
 ## Prompt
 
@@ -35,7 +37,7 @@ For each PR in the list:
   2. If merge_state indicates conflicts: check `gh pr view <number> --repo dknowles2/<repo> --json comments` first. If `@dependabot rebase` was already commented and no new commits occurred, do NOT comment again. Otherwise, comment `@dependabot rebase` on the PR (`gh pr comment <number> --repo dknowles2/<repo> --body "@dependabot rebase"`) and stop — do not manually resolve conflicts.
   3. If CI is failing, inspect logs: `gh run list --repo dknowles2/<repo> --branch <pr-branch> --limit 1` then `gh run view <run-id> --repo dknowles2/<repo> --log-failed`.
   4. If the failure is a straightforward lint/format issue (e.g. new ruff rule violations) that doesn't change behavior, fix it: run the project's lint/format command, commit, and push to the PR branch.
-  5. If the fix is NOT obviously safe (behavioral change, ambiguous test failure, permission denied pushing to the branch, anything uncertain), STOP and escalate: assign David on GitHub itself via `gh pr edit <number> --repo dknowles2/<repo> --add-assignee dknowles2`. Only post an escalation comment if one hasn't already been posted for these commits.
+  5. If the fix is NOT obviously safe (behavioral change, ambiguous test failure, permission denied pushing to the branch, anything uncertain), STOP and escalate: assign David on GitHub itself via `gh pr edit <number> --repo dknowles2/<repo> --add-assignee dknowles2`. Only post an escalation comment on GitHub if one hasn't already been posted for these commits.
   6. Report what you did (rebased / fixed lint / escalated / skipped duplicate comment) as your final kanban comment.
 
 - If category == "third_party": create/update a kanban task assigned to the `reviewer` profile, same idempotency key scheme. Task title: `[<repo>] Review PR #<number> by <author>: <title>`. Use workspace `worktree:/home/dknowles/workspace/<repo short name>`. Body must include the PR URL, author, merge_state, checks, already_reviewed, and these numbered instructions:
@@ -50,7 +52,8 @@ Always pass `--priority 2 --json` to `hermes kanban create`. Use board `default`
 
 After processing:
 1. Run `hermes kanban list --json --board default` and reconcile: any existing task with an idempotency key starting with `pr-watcher-` whose corresponding PR is no longer in the current open-PR list (merged, closed, or now authored by dknowles2) should be marked complete and archived: `hermes kanban complete <task_id>` then `hermes kanban archive <task_id>`.
-2. Deliver a summary to David via Telegram ONLY IF there were actual changes (new PRs, status updates, tasks completed/archived, or PRs escalated to him):
-   - Include the full clickable GitHub URL (e.g. `https://github.com/dknowles2/pydrawise/pull/534`), author, and a 1-2 sentence summary of what changed or what was filed/escalated.
-   - CRITICAL SILENCE RULE: If nothing changed and no actions/escalations occurred since the previous run, do NOT send any Telegram message — remain completely silent.
+2. Deliver a summary to David via Telegram ONLY IF there were actual changes or questions needing David's input:
+   - If a PR or task has a question or needs David's decision, clearly state: `❓ Question for David: [<Repo> #<Number>]` with the full clickable GitHub URL (e.g. `https://github.com/dknowles2/pydrawise/pull/534`) and the exact question/decision needed, so David can reply directly in Telegram to resolve it.
+   - For other active PRs: include the full clickable GitHub URL, author, and a 1-2 sentence summary of status.
+   - CRITICAL SILENCE RULE: If nothing changed and no actions/questions/escalations occurred since the previous run, do NOT send any Telegram message — remain completely silent.
 ```
