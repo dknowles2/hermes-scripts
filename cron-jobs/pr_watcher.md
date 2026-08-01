@@ -47,7 +47,7 @@ Always pass `--priority 2 --json` to `hermes kanban create`. Use board `default`
 
 After processing:
 1. Run `hermes kanban list --json --board default` and reconcile: any existing task with an idempotency key starting with `pr-watcher-` whose corresponding PR is no longer in the current open-PR list (merged, closed, or now authored by dknowles2) should be marked complete and archived: `hermes kanban complete <task_id>` then `hermes kanban archive <task_id>`.
-2. Deliver a concise summary to David via Telegram:
-   - For each active PR: include the full clickable GitHub URL (e.g. `https://github.com/dknowles2/pydrawise/pull/534`), author, and a 1-2 sentence summary of what the PR changes/fixes, its current CI/check status, and whether GitHub assignee was set to `dknowles2`.
-   - List tasks filed, updated, or completed/archived.
+2. Deliver a summary to David via Telegram ONLY IF there were actual changes (new PRs, status updates, tasks completed/archived, or PRs escalated to him):
+   - Include the full clickable GitHub URL (e.g. `https://github.com/dknowles2/pydrawise/pull/534`), author, and a 1-2 sentence summary of what changed or what was filed/escalated.
+   - CRITICAL SILENCE RULE: If nothing changed and no actions/escalations occurred since the previous run, do NOT send any Telegram message — remain completely silent.
 ```
