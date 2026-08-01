@@ -53,10 +53,12 @@ def main():
 
                 # Fetch mergeable/CI status for extra context
                 detail_raw = run_gh(
-                    f'gh pr view {number} --repo {repo} --json mergeable,statusCheckRollup,mergeStateStatus,isDraft'
+                    f'gh pr view {number} --repo {repo} --json mergeable,statusCheckRollup,mergeStateStatus,isDraft,reviews,comments,commits'
                 )
                 mergeable = ""
                 checks_summary = ""
+                already_reviewed = False
+                comment_count = 0
                 if detail_raw:
                     try:
                         detail = json.loads(detail_raw)
@@ -67,9 +69,17 @@ def main():
                         failing = [c.get("name", c.get("context", "?")) for c in rollup
                                    if c.get("conclusion") not in (None, "SUCCESS", "NEUTRAL", "SKIPPED")]
                         checks_summary = f"failing: {', '.join(failing)}" if failing else "all checks passing (or none reported)"
+                        
+                        reviews = detail.get("reviews", [])
+                        commits = detail.get("commits", [])
+                        comments = detail.get("comments", [])
+                        comment_count = len(comments)
+                        last_rev = reviews[-1].get("submittedAt") if reviews else None
+                        last_com = commits[-1].get("committedDate") if commits else None
+                        if last_rev and last_com and last_rev >= last_com:
+                            already_reviewed = True
                     except Exception as e:
                         print(f"Error parsing pr view for {repo}#{number}: {e}", file=sys.stderr)
-
                 prs.append({
                     "repo": repo,
                     "number": number,
@@ -81,6 +91,8 @@ def main():
                     "body": body,
                     "merge_state": mergeable,
                     "checks": checks_summary,
+                    "already_reviewed": already_reviewed,
+                    "comment_count": comment_count,
                 })
         except Exception as e:
             print(f"Error parsing search results: {e}", file=sys.stderr)
