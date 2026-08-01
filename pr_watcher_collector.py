@@ -26,12 +26,14 @@ def classify(author):
 
 
 def main():
-    raw = run_gh(f'gh api "search/issues?q=is:pr+is:open+user:{OWNER}&per_page=100"')
+    raw = run_gh(f'gh api "search/issues?q=is:pr+is:open+-is:draft+user:{OWNER}&per_page=100"')
     prs = []
     if raw:
         try:
             data = json.loads(raw)
             for item in data.get("items", []):
+                if item.get("draft"):
+                    continue  # Ignore draft PRs
                 author = item.get("user", {}).get("login", "")
                 category = classify(author)
                 if category == "own":
@@ -51,13 +53,15 @@ def main():
 
                 # Fetch mergeable/CI status for extra context
                 detail_raw = run_gh(
-                    f'gh pr view {number} --repo {repo} --json mergeable,statusCheckRollup,mergeStateStatus'
+                    f'gh pr view {number} --repo {repo} --json mergeable,statusCheckRollup,mergeStateStatus,isDraft'
                 )
                 mergeable = ""
                 checks_summary = ""
                 if detail_raw:
                     try:
                         detail = json.loads(detail_raw)
+                        if detail.get("isDraft"):
+                            continue  # Double-check draft status
                         mergeable = detail.get("mergeStateStatus", "") or detail.get("mergeable", "")
                         rollup = detail.get("statusCheckRollup", []) or []
                         failing = [c.get("name", c.get("context", "?")) for c in rollup

@@ -18,10 +18,11 @@ as an off-machine backup in case that host is lost — it is not deployed from h
   is currently a no-op in practice since that's the only repo this script touches;
   the guard exists so it's safe if the script's scope ever expands.
 
-- **`pr_watcher_collector.py`** — Fetches open PRs across `dknowles2/*` repos via
-  `gh api search/issues`, classifies each by author (`dependabot`, `third_party`, or
-  `own` — David's own PRs are skipped). Also skips repos in `IGNORED_REPOS`
-  entirely (currently `dknowles2/ha-shady`). Feeds the "PR Watcher" cron job, which:
+- **`pr_watcher_collector.py`** — Fetches open non-draft PRs (`-is:draft`) across
+  `dknowles2/*` repos via `gh api search/issues`, classifies each by author
+  (`dependabot`, `third_party`, or `own` — David's own PRs are skipped). Also skips
+  repos in `IGNORED_REPOS` entirely (currently `dknowles2/ha-shady`). Draft PRs are
+  filtered out. Feeds the "PR Watcher" cron job, which:
   - Dependabot PRs → assigns a `watcher` kanban task to diagnose/fix CI failures
     (e.g. new ruff rule violations) or request a rebase on conflicts, escalating to
     David when unsure.
