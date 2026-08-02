@@ -36,18 +36,20 @@ For each PR in the list:
 - If category == "dependabot": create/update a kanban task assigned to the `watcher` profile using this idempotency key: `pr-watcher-<repo>-<number>` (replace `/` in repo with `-`). Task title: `[<repo>] Dependabot PR #<number>: <title>`. Use workspace `worktree:/home/dknowles/workspace/<repo short name>`. Body must include the PR URL, merge_state, checks, already_reviewed, and these numbered instructions:
   1. Ensure appropriate release-note classification label is applied to the PR on GitHub if missing.
   2. `gh pr checkout <number> --repo dknowles2/<repo>`
-  3. If merge_state indicates conflicts: check `gh pr view <number> --repo dknowles2/<repo> --json comments` first. If `@dependabot rebase` was already commented and no new commits occurred, do NOT comment again. Otherwise, comment `@dependabot rebase` on the PR (`gh pr comment <number> --repo dknowles2/<repo> --body "@dependabot rebase"`) and stop — do not manually resolve conflicts.
-  4. If CI is failing, inspect logs: `gh run list --repo dknowles2/<repo> --branch <pr-branch> --limit 1` then `gh run view <run-id> --repo dknowles2/<repo> --log-failed`.
-  5. If the failure is a straightforward lint/format issue (e.g. new ruff rule violations) that doesn't change behavior, fix it: run the project's lint/format command, commit, and push to the PR branch.
-  6. If the fix is NOT obviously safe (behavioral change, ambiguous test failure, permission denied pushing to the branch, anything uncertain), STOP and escalate: assign David on GitHub via `gh pr edit <number> --repo dknowles2/<repo> --add-assignee dknowles2`, and post a comment `gh pr comment <number> --repo dknowles2/<repo> --body "<explanation>"`. The comment MUST identify itself as `*(Automated escalation via Hermes Watcher Agent)*` and state a clear `Recommendation:` for @dknowles2.
-  7. Report what you did (rebased / fixed lint / escalated / skipped duplicate comment) as your final kanban comment.
+  3. Check for in-repo guidelines (`AGENTS.md`, `CLAUDE.md`, `.hermes/REVIEW.md`, `CONTRIBUTING.md`) in the workspace root and adhere to any project-specific rules.
+  4. If merge_state indicates conflicts: check `gh pr view <number> --repo dknowles2/<repo> --json comments` first. If `@dependabot rebase` was already commented and no new commits occurred, do NOT comment again. Otherwise, comment `@dependabot rebase` on the PR (`gh pr comment <number> --repo dknowles2/<repo> --body "@dependabot rebase"`) and stop — do not manually resolve conflicts.
+  5. If CI is failing, inspect logs: `gh run list --repo dknowles2/<repo> --branch <pr-branch> --limit 1` then `gh run view <run-id> --repo dknowles2/<repo> --log-failed`.
+  6. If the failure is a straightforward lint/format issue (e.g. new ruff rule violations) that doesn't change behavior, fix it: run the project's lint/format command, commit, and push to the PR branch.
+  7. If the fix is NOT obviously safe (behavioral change, ambiguous test failure, permission denied pushing to the branch, anything uncertain), STOP and escalate: assign David on GitHub via `gh pr edit <number> --repo dknowles2/<repo> --add-assignee dknowles2`, and post a comment `gh pr comment <number> --repo dknowles2/<repo> --body "<explanation>"`. The comment MUST identify itself as `*(Automated escalation via Hermes Watcher Agent)*` and state a clear `Recommendation:` for @dknowles2.
+  8. Report what you did (rebased / fixed lint / escalated / skipped duplicate comment) as your final kanban comment.
 
 - If category == "third_party": create/update a kanban task assigned to the `reviewer` profile, same idempotency key scheme. Task title: `[<repo>] Review PR #<number> by <author>: <title>`. Use workspace `worktree:/home/dknowles/workspace/<repo short name>`. Body must include the PR URL, author, merge_state, checks, already_reviewed, and these numbered instructions:
   1. Ensure appropriate release-note classification label is applied to the PR on GitHub if missing (e.g. `bug`, `enhancement`, `documentation`, `chore`).
   2. Check if a review was already completed (`already_reviewed == true` in JSON or via `gh pr view <number> --repo dknowles2/<repo> --json reviews,commits`). If `already_reviewed == true` and no new commits have been pushed since the last review, DO NOT run `gh pr review` or comment again! Just complete/update the kanban task.
   3. Otherwise (if no review exists for the latest commits): `gh pr checkout <number> --repo dknowles2/<repo>` and `gh pr diff <number> --repo dknowles2/<repo>`.
-  4. Evaluate code quality, correctness, test coverage, alignment with project conventions, and whether CI is passing.
-  5. Leave a review comment on GitHub via `gh pr review <number> --repo dknowles2/<repo> --comment --body "<review>"`.
+  4. Check for in-repo review guidelines in the workspace root (`AGENTS.md`, `CLAUDE.md`, `.hermes/REVIEW.md`, `CONTRIBUTING.md`) and strictly apply those repo-specific instructions when evaluating the diff.
+  5. Evaluate code quality, correctness, test coverage, alignment with project conventions and in-repo guidelines, and whether CI is passing.
+  6. Leave a review comment on GitHub via `gh pr review <number> --repo dknowles2/<repo> --comment --body "<review>"`.
      CRITICAL FORMATTING & ASSIGNMENT RULES FOR THIRD-PARTY REVIEWS:
      - AGENT IDENTIFICATION: Must state `*(Automated review via Hermes Reviewer Agent)*` at the top or bottom of the comment body.
      - IF CHANGES ARE REQUESTED / CONCERNS FOUND:
@@ -59,7 +61,7 @@ For each PR in the list:
        - Include an explicit recommendation line for @dknowles2, e.g.:
          `Recommendation: Approve & Merge` or `Recommendation: Needs Manual Intervention - <reason>`
        - THEN AND ONLY THEN assign David on GitHub: `gh pr edit <number> --repo dknowles2/<repo> --add-assignee dknowles2` so @dknowles2 has final say.
-  6. Report your verdict (approve & assigned dknowles2 / requested changes & waiting on author / already reviewed) as your final kanban comment.
+  7. Report your verdict (approve & assigned dknowles2 / requested changes & waiting on author / already reviewed) as your final kanban comment.
 
 Always pass `--priority 2 --json` to `hermes kanban create`. Use board `default`.
 
