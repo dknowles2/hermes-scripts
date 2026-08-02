@@ -46,14 +46,18 @@ For each PR in the list:
 - If category == "third_party": create/update a kanban task assigned to the `reviewer` profile, same idempotency key scheme. Task title: `[<repo>] Review PR #<number> by <author>: <title>`. Use workspace `worktree:/home/dknowles/workspace/<repo short name>`. Body must include the PR URL, author, merge_state, checks, already_reviewed, and these numbered instructions:
   1. Ensure appropriate release-note classification label is applied to the PR on GitHub if missing (e.g. `bug`, `enhancement`, `documentation`, `chore`).
   2. Check if a review was already completed (`already_reviewed == true` in JSON or via `gh pr view <number> --repo dknowles2/<repo> --json reviews,commits`). If `already_reviewed == true` and no new commits have been pushed since the last review, DO NOT run `gh pr review` or comment again! Just complete/update the kanban task.
-  3. Otherwise (if no review exists for the latest commits): `gh pr checkout <number> --repo dknowles2/<repo>` and `gh pr diff <number> --repo dknowles2/<repo>`.
-  4. Check for in-repo review guidelines in the workspace root (`AGENTS.md`, `CLAUDE.md`, `.hermes/REVIEW.md`, `CONTRIBUTING.md`) and strictly apply those repo-specific instructions when evaluating the diff.
-  5. Evaluate code quality, correctness, test coverage, alignment with project conventions and in-repo guidelines, and whether CI is passing.
-  6. Leave a review comment on GitHub via `gh pr review <number> --repo dknowles2/<repo> --comment --body "<review>"`.
+  3. Otherwise (if no review exists for the latest commits):
+     a. `gh pr checkout <number> --repo dknowles2/<repo>`
+     b. Read all PR comments & author notes: `gh pr view <number> --repo dknowles2/<repo> --json body,comments,reviews`. Read what the author wrote!
+     c. Read the full code diff: `gh pr diff <number> --repo dknowles2/<repo>`.
+     d. Check for in-repo review guidelines in the workspace root (`AGENTS.md`, `CLAUDE.md`, `.hermes/REVIEW.md`, `CONTRIBUTING.md`) and strictly apply those repo-specific instructions.
+     e. Cross-reference the code diff with the author's comments and PR description. Ensure you understand WHY the author made their changes before commenting. Do NOT post comments that contradict the author's stated explanation without addressing their reasoning directly.
+     f. Run tests/lint locally in the workspace (e.g. `pytest` or `ruff check .`) to verify behavior.
+  4. Leave a review comment on GitHub via `gh pr review <number> --repo dknowles2/<repo> --comment --body "<review>"`.
      CRITICAL FORMATTING & ASSIGNMENT RULES FOR THIRD-PARTY REVIEWS:
      - AGENT IDENTIFICATION: Must state `*(Automated review via Hermes Reviewer Agent)*` at the top or bottom of the comment body.
      - IF CHANGES ARE REQUESTED / CONCERNS FOUND:
-       - Explain the requested changes clearly in the review comment body.
+       - Explain the requested changes clearly, referencing specific code lines and addressing the author's comments.
        - DO NOT assign dknowles2 on GitHub! Leave dknowles2 UNASSIGNED (or remove dknowles2 if assigned) so the PR author addresses the feedback first.
        - Wait for the PR author to push new commits.
      - IF THE PR LOOKS GOOD TO MERGE ("LGTM") OR REQUIRES MANUAL INTERVENTION FROM DAVID:
@@ -61,7 +65,7 @@ For each PR in the list:
        - Include an explicit recommendation line for @dknowles2, e.g.:
          `Recommendation: Approve & Merge` or `Recommendation: Needs Manual Intervention - <reason>`
        - THEN AND ONLY THEN assign David on GitHub: `gh pr edit <number> --repo dknowles2/<repo> --add-assignee dknowles2` so @dknowles2 has final say.
-  7. Report your verdict (approve & assigned dknowles2 / requested changes & waiting on author / already reviewed) as your final kanban comment.
+  5. Report your verdict (approve & assigned dknowles2 / requested changes & waiting on author / already reviewed) as your final kanban comment.
 
 Always pass `--priority 2 --json` to `hermes kanban create`. Use board `default`.
 
