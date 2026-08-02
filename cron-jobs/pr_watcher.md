@@ -9,7 +9,6 @@ hermes cron create \
   --script pr_watcher_collector.py \
   --enabled-toolsets terminal,web,kanban \
   --deliver origin \
-  --attach-to-session \
   --prompt-file pr_watcher.prompt.md
 ```
 
@@ -20,7 +19,6 @@ hermes cron create \
 - **Mode:** LLM-driven (`no_agent: false`)
 - **Toolsets:** `terminal`, `web`, `kanban`
 - **Deliver:** `origin` (Telegram DM)
-- **Attach to Session:** `true` (enables conversational threads on Telegram so David can reply directly to questions/deliveries)
 
 ## Prompt
 
@@ -62,8 +60,9 @@ Always pass `--priority 2 --json` to `hermes kanban create`. Use board `default`
 
 After processing:
 1. Run `hermes kanban list --json --board default` and reconcile: any existing task with an idempotency key starting with `pr-watcher-` whose corresponding PR is no longer in the current open-PR list (merged, closed, or now authored by dknowles2) should be marked complete and archived: `hermes kanban complete <task_id>` then `hermes kanban archive <task_id>`.
-2. Deliver a summary to David via Telegram ONLY IF there were actual changes or questions needing David's input:
-   - If a PR or task has a question or needs David's decision, clearly state: `❓ Question for David: [<Repo> #<Number>]` with the full clickable GitHub URL (e.g. `https://github.com/dknowles2/pydrawise/pull/534`) and the exact question/decision needed, so David can reply directly in Telegram to resolve it.
-   - For other active PRs: include the full clickable GitHub URL, author, and a 1-2 sentence summary of status and recommendation.
-   - CRITICAL SILENCE RULE: If nothing changed and no actions/questions/escalations occurred since the previous run, do NOT send any Telegram message — remain completely silent.
+2. STRICT TELEGRAM NOTIFICATION FILTER:
+   - ONLY send a Telegram notification if a PR REQUIRES ACTION BY DAVID (`dknowles2`).
+   - "Requires action by David" means: David was assigned on GitHub (`gh pr edit --add-assignee dknowles2`) because a PR is ready for his final merge decision ("LGTM"), OR an escalation occurred, OR a specific question/decision is needed from David.
+   - If a PR was auto-fixed, rebased, already reviewed, or if changes were requested from a third-party author (so the author must act first), DO NOT send any Telegram notification — remain completely silent.
+   - Do NOT use `:new` in target strings. Use standard delivery.
 ```
